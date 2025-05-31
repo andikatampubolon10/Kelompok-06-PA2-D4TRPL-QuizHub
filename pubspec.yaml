@@ -34,9 +34,9 @@ dependencies:
   shared_preferences: ^2.0.8
   connectivity_plus: ^4.0.2
   app_lifecycle_observer: ^0.0.2
-  flutter_native_splash: ^2.4.6
   curved_navigation_bar: ^1.0.6
   url_launcher: ^6.2.5
+  flutter_native_splash: ^2.4.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -52,10 +52,13 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.12.0
 
 flutter_native_splash:
-  # color: "#ffffff"  # Tentukan warna latar belakang splash screen (bisa dikomentari jika tidak ingin menggunakan)
-  image: assets/images/open.png  # Tentukan path gambar splash screen (pastikan path ini benar)
+  color: "#ffffff"  # Pastikan ada warna yang valid di sini
+  image: "assets/images/open.png"  # Pastikan gambar splash screen ada di folder assets
+  android: true  # Aktifkan splash screen di Android
+  ios: true  
 
   android_12:
     image: assets/images/open.png  # Tentukan path gambar untuk Android 12 (juga harus sesuai dengan path yang benar)
