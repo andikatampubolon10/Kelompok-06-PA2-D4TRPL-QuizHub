@@ -39,6 +39,47 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  // Check if current time is within quiz time window
+  bool _isQuizTimeValid() {
+    if (widget.waktuMulai.isEmpty || widget.waktuSelesai.isEmpty) {
+      return true; // If no time restrictions, allow access
+    }
+
+    try {
+      DateTime now = DateTime.now();
+      DateTime startTime = DateTime.parse(widget.waktuMulai);
+      DateTime endTime = DateTime.parse(widget.waktuSelesai);
+
+      return now.isAfter(startTime) && now.isBefore(endTime);
+    } catch (e) {
+      print('Error parsing quiz times: $e');
+      return true; // If parsing fails, allow access
+    }
+  }
+
+  // Get appropriate message for quiz timing
+  String _getQuizTimingMessage() {
+    if (widget.waktuMulai.isEmpty || widget.waktuSelesai.isEmpty) {
+      return '';
+    }
+
+    try {
+      DateTime now = DateTime.now();
+      DateTime startTime = DateTime.parse(widget.waktuMulai);
+      DateTime endTime = DateTime.parse(widget.waktuSelesai);
+
+      if (now.isBefore(startTime)) {
+        return 'Kuis belum dimulai. Kuis akan dibuka pada ${_formatDateTime(widget.waktuMulai)}.';
+      } else if (now.isAfter(endTime)) {
+        return 'Kuis sudah berakhir. Kuis ditutup pada ${_formatDateTime(widget.waktuSelesai)}.';
+      }
+      return '';
+    } catch (e) {
+      print('Error checking quiz timing: $e');
+      return '';
+    }
+  }
+
   // Format date string for display without using DateFormat
   String _formatDateTime(String dateTimeStr) {
     if (dateTimeStr.isEmpty) return 'Tidak ditentukan';
@@ -85,7 +126,6 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
     }
   }
 
-
   Future<bool> hasStudentTakenQuiz(String idUjian, int siswaId) async {
     try {
       var url = Uri.parse('https://kelompok06-trpl23-api-golang-production.up.railway.app/check-attempt-ujian');
@@ -111,78 +151,89 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
     }
   }
 
-
   // Function to validate the entered password by calling the API
   Future<void> _validatePassword() async {
-  final password = _passwordController.text;
+    final password = _passwordController.text;
 
-  if (password.isEmpty) {
-    setState(() {
-      _errorMessage = 'Password tidak boleh kosong.';
-    });
-    return;
-  }
-
-  setState(() {
-    _isLoading = true;
-    _errorMessage = '';
-    print("Received id_ujian: ${widget.idUjian}");
-  });
-
-  var url = Uri.parse('https://kelompok06-trpl23-api-golang-production.up.railway.app/login-ujian/${widget.idUjian}');
-  try {
-    var response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'password_masuk': password}),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (response.statusCode == 200) {
-      // Password benar, navigasi ke QuizScreen
-      // Parse idUjian to int here for QuizScreen
-      int parsedIdUjian;
-      try {
-        parsedIdUjian = int.parse(widget.idUjian);
-      } catch (e) {
-        print("Error parsing idUjian: $e");
-        parsedIdUjian = 0; // Default value if parsing fails
-      }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => QuizScreen(
-            title: widget.title,
-            subject: widget.subject,
-            gradeLevel: widget.gradeLevel,
-            idUjian: parsedIdUjian,  // Pass as int after parsing
-            idTipeUjian: widget.idTipeUjian,
-            idKursus: widget.idKursus,
-            idSiswa: widget.idSiswa,
-            durasi: widget.durasi, // Pass duration to QuizScreen
-          ),
-        ),
-      );
-    } else {
-      // Password salah
+    if (password.isEmpty) {
       setState(() {
-        _errorMessage = 'Password salah, silakan coba lagi.';
+        _errorMessage = 'Password tidak boleh kosong.';
+      });
+      return;
+    }
+
+    // Check if quiz time is valid before proceeding
+    if (!_isQuizTimeValid()) {
+      setState(() {
+        _errorMessage = _getQuizTimingMessage();
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+      print("Received id_ujian: ${widget.idUjian}");
+    });
+
+    var url = Uri.parse('https://kelompok06-trpl23-api-golang-production.up.railway.app/login-ujian/${widget.idUjian}');
+    try {
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'password_masuk': password}),
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response.statusCode == 200) {
+        // Password benar, navigasi ke QuizScreen
+        // Parse idUjian to int here for QuizScreen
+        int parsedIdUjian;
+        try {
+          parsedIdUjian = int.parse(widget.idUjian);
+        } catch (e) {
+          print("Error parsing idUjian: $e");
+          parsedIdUjian = 0; // Default value if parsing fails
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QuizScreen(
+              title: widget.title,
+              subject: widget.subject,
+              gradeLevel: widget.gradeLevel,
+              idUjian: parsedIdUjian,  // Pass as int after parsing
+              idTipeUjian: widget.idTipeUjian,
+              idKursus: widget.idKursus,
+              idSiswa: widget.idSiswa,
+              durasi: widget.durasi, // Pass duration to QuizScreen
+            ),
+          ),
+        );
+      } else {
+        // Password salah
+        setState(() {
+          _errorMessage = 'Password salah, silakan coba lagi.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Terjadi kesalahan koneksi: $e';
       });
     }
-  } catch (e) {
-    setState(() {
-      _isLoading = false;
-      _errorMessage = 'Terjadi kesalahan koneksi: $e';
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
+    // Get timing message to show if quiz is not available
+    String timingMessage = _getQuizTimingMessage();
+    bool isQuizAvailable = _isQuizTimeValid();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF036BB9),
@@ -213,15 +264,49 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
               const SizedBox(height: 24),
               _buildScheduleInfo(),
               const SizedBox(height: 24),
-              _buildPasswordField(),
-              const SizedBox(height: 24),
-              _buildStartButton(),
+              
+              // Show timing message if quiz is not available
+              if (timingMessage.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    border: Border.all(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.access_time, color: Colors.orange.shade700),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          timingMessage,
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
+              // Only show password field and button if quiz is available
+              if (isQuizAvailable) ...[
+                _buildPasswordField(),
+                const SizedBox(height: 24),
+                _buildStartButton(),
+              ],
+              
               if (_errorMessage.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
                   child: Text(
                     _errorMessage,
                     style: const TextStyle(color: Colors.red, fontSize: 16),
+                    textAlign: TextAlign.center,
                   ),
                 ),
             ],
