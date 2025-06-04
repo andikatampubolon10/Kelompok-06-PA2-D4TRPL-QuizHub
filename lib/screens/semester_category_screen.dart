@@ -50,7 +50,8 @@ class MataPelajaranCategoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kategori Kelas', 
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Kategori Mata Pelajaran', 
           style: TextStyle(
           fontSize: 20.0,
           color: Colors.white,

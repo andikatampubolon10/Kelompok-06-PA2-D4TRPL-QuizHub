@@ -47,10 +47,33 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
 
     try {
       DateTime now = DateTime.now();
-      DateTime startTime = DateTime.parse(widget.waktuMulai);
-      DateTime endTime = DateTime.parse(widget.waktuSelesai);
-
-      return now.isAfter(startTime) && now.isBefore(endTime);
+      
+      // Debug information
+      print('Current time (local): $now');
+      print('Raw waktuMulai: ${widget.waktuMulai}');
+      print('Raw waktuSelesai: ${widget.waktuSelesai}');
+      
+      // Parse the UTC times and convert to local time
+      DateTime startTimeUtc = DateTime.parse(widget.waktuMulai);
+      DateTime endTimeUtc = DateTime.parse(widget.waktuSelesai);
+      
+      // Convert UTC times to local time
+      DateTime startTimeLocal = startTimeUtc.toLocal();
+      DateTime endTimeLocal = endTimeUtc.toLocal();
+      
+      // Debug parsed times
+      print('Parsed startTime (UTC): $startTimeUtc');
+      print('Parsed endTime (UTC): $endTimeUtc');
+      print('Converted startTime (Local): $startTimeLocal');
+      print('Converted endTime (Local): $endTimeLocal');
+      print('Is now after startTime: ${now.isAfter(startTimeLocal)}');
+      print('Is now before endTime: ${now.isBefore(endTimeLocal)}');
+      
+      // Check if current time is within the time window (using local times)
+      bool isValid = now.isAfter(startTimeLocal) && now.isBefore(endTimeLocal);
+      print('Quiz time is valid: $isValid');
+      
+      return isValid;
     } catch (e) {
       print('Error parsing quiz times: $e');
       return true; // If parsing fails, allow access
@@ -65,13 +88,19 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
 
     try {
       DateTime now = DateTime.now();
-      DateTime startTime = DateTime.parse(widget.waktuMulai);
-      DateTime endTime = DateTime.parse(widget.waktuSelesai);
+      
+      // Parse the UTC times and convert to local time
+      DateTime startTimeUtc = DateTime.parse(widget.waktuMulai);
+      DateTime endTimeUtc = DateTime.parse(widget.waktuSelesai);
+      
+      // Convert UTC times to local time
+      DateTime startTimeLocal = startTimeUtc.toLocal();
+      DateTime endTimeLocal = endTimeUtc.toLocal();
 
-      if (now.isBefore(startTime)) {
-        return 'Kuis belum dimulai. Kuis akan dibuka pada ${_formatDateTime(widget.waktuMulai)}.';
-      } else if (now.isAfter(endTime)) {
-        return 'Kuis sudah berakhir. Kuis ditutup pada ${_formatDateTime(widget.waktuSelesai)}.';
+      if (now.isBefore(startTimeLocal)) {
+        return 'Kuis belum dimulai. Kuis akan dibuka pada ${_formatDateTime(startTimeLocal.toIso8601String())}.';
+      } else if (now.isAfter(endTimeLocal)) {
+        return 'Kuis sudah berakhir. Kuis ditutup pada ${_formatDateTime(endTimeLocal.toIso8601String())}.';
       }
       return '';
     } catch (e) {
@@ -87,6 +116,11 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
     try {
       // Parse the date string
       DateTime dateTime = DateTime.parse(dateTimeStr);
+      
+      // If it's UTC time, convert to local
+      if (dateTimeStr.contains('Z') || dateTimeStr.contains('+')) {
+        dateTime = dateTime.toLocal();
+      }
       
       // Format the date manually
       List<String> months = [
@@ -107,8 +141,8 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
       
       return '$formattedDate WIB';
     } catch (e) {
-      print('Error parsing date: $e');
-      return dateTimeStr;
+      print('Error parsing date for display: $e');
+      return dateTimeStr; // Return the original string if parsing fails
     }
   }
 
@@ -233,6 +267,14 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
     // Get timing message to show if quiz is not available
     String timingMessage = _getQuizTimingMessage();
     bool isQuizAvailable = _isQuizTimeValid();
+    
+    // Debug information in the UI
+    print('Quiz availability check:');
+    print('waktuMulai: ${widget.waktuMulai}');
+    print('waktuSelesai: ${widget.waktuSelesai}');
+    print('Current time: ${DateTime.now()}');
+    print('Is quiz available according to _isQuizTimeValid(): $isQuizAvailable');
+    print('Timing message: $timingMessage');
 
     return Scaffold(
       appBar: AppBar(
@@ -341,14 +383,29 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
   }
 
   Widget _buildScheduleInfo() {
-    // Use the actual waktu_mulai and waktu_selesai if available
-    final startTimeText = widget.waktuMulai.isNotEmpty 
-        ? 'Kuis dibuka pada ${_formatDateTime(widget.waktuMulai)}'
-        : 'Waktu mulai belum ditambahkan';
-        
-    final endTimeText = widget.waktuSelesai.isNotEmpty
-        ? 'Kuis ditutup pada ${_formatDateTime(widget.waktuSelesai)}'
-        : 'Waktu selesai belum ditambahkan';
+    // Convert UTC times to local time for display
+    String startTimeText = 'Waktu mulai belum ditambahkan';
+    String endTimeText = 'Waktu selesai belum ditambahkan';
+    
+    if (widget.waktuMulai.isNotEmpty) {
+      try {
+        DateTime startTimeUtc = DateTime.parse(widget.waktuMulai);
+        DateTime startTimeLocal = startTimeUtc.toLocal();
+        startTimeText = 'Kuis dibuka pada ${_formatDateTime(startTimeLocal.toIso8601String())}';
+      } catch (e) {
+        startTimeText = 'Kuis dibuka pada ${widget.waktuMulai}';
+      }
+    }
+    
+    if (widget.waktuSelesai.isNotEmpty) {
+      try {
+        DateTime endTimeUtc = DateTime.parse(widget.waktuSelesai);
+        DateTime endTimeLocal = endTimeUtc.toLocal();
+        endTimeText = 'Kuis ditutup pada ${_formatDateTime(endTimeLocal.toIso8601String())}';
+      } catch (e) {
+        endTimeText = 'Kuis ditutup pada ${widget.waktuSelesai}';
+      }
+    }
 
     return Column(
       children: [

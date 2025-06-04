@@ -1411,7 +1411,6 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                 const SizedBox(width: 16),
                 _buildLegendItem(Colors.green, 'Sudah dijawab'),
                 const SizedBox(width: 16),
-                _buildLegendItem(Colors.yellow, 'Dilihat belum dijawab'),
               ],
             ),
             const SizedBox(height: 16),

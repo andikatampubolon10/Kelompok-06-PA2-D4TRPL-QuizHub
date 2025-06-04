@@ -96,7 +96,15 @@ class LatihanSoalCategory extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Latihan Soal'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Latihan Soal',
+        style: TextStyle(
+          fontSize: 20.0,
+          color: Colors.white,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'Poppins',
+          ),),
+        
         backgroundColor: const Color(0xFF0078D4),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -175,11 +183,13 @@ class LatihanSoalCategory extends StatelessWidget {
                           ),
                         ),
                       );
-                    },
+                    },                   
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh'),
+                    label: const Text('Refresh',
+                    style: TextStyle(
+                    color: Colors.white,),),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0078D4),
+                    backgroundColor: const Color(0xFF0078D4),
                     ),
                   ),
                 ],

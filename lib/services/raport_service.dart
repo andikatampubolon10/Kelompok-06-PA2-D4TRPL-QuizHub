@@ -89,51 +89,62 @@ class RaportService {
   }
 
   Future<double> getTotalNilai(String idSiswa, String idKursus) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/nilai-kursus-siswa/$idKursus/$idSiswa'),
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/nilai-kursus-siswa/$idKursus/$idSiswa'),
+    );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        // Debugging untuk melihat struktur data
-        print("Received data: $data");
+      // Debugging untuk melihat struktur data
+      print("Received data: $data");
 
-        // Periksa apakah 'nilai_total_per_tipe_ujian' ada di dalam response
-        if (data['nilai'] != null) {
-          List<dynamic> nilaiList = data['nilai'];
+      // Cek format response baru yang memiliki field total_nilai
+      if (data['total_nilai'] != null) {
+        // Ambil nilai total langsung dari field total_nilai
+        double totalNilai = (data['total_nilai'] as num).toDouble();
+        print("Total nilai from API: $totalNilai");
+        return totalNilai;
+      } 
+      // Fallback ke format lama jika total_nilai tidak ada
+      else if (data['nilai'] != null) {
+        List<dynamic> nilaiList = data['nilai'];
+        print("Received nilai list: $nilaiList");
 
-          // Debugging nilai yang diterima
-          print("Received nilai list: $nilaiList");
-
-          // Ambil nilai total jika ada
-          double totalNilai = 0.0;
-          for (var nilai in nilaiList) {
-            double nilaiTotal = (nilai['nilai_total'] as num?)?.toDouble() ?? 0.0;
-            totalNilai += nilaiTotal;
-            print("Adding $nilaiTotal to total score");
-          }
-
-          // Debugging total nilai yang dihitung
-          print("Total calculated score: $totalNilai");
-
-          return totalNilai;
-        } else {
-          return 0.0; // Return 0 jika tidak ada data nilai
+        // Ambil nilai total jika ada
+        double totalNilai = 0.0;
+        for (var nilai in nilaiList) {
+          double nilaiTotal = (nilai['nilai_total'] as num?)?.toDouble() ?? 0.0;
+          totalNilai += nilaiTotal;
+          print("Adding $nilaiTotal to total score");
         }
-      } else {
-        print('Failed to load total score: ${response.statusCode}');
-        return 0.0; // Return 0 jika response gagal
+
+        print("Total calculated score: $totalNilai");
+        return totalNilai;
+      } 
+      // Cek jika ada field summary yang berisi total_nilai
+      else if (data['summary'] != null && data['summary']['total_nilai'] != null) {
+        double totalNilai = (data['summary']['total_nilai'] as num).toDouble();
+        print("Total nilai from summary: $totalNilai");
+        return totalNilai;
       }
-    } catch (e) {
-      print('Error fetching total score: $e');
-      return 0.0; // Return 0 jika terjadi kesalahan
+      else {
+        print("No score data found in response");
+        return 0.0; // Return 0 jika tidak ada data nilai
+      }
+    } else {
+      print('Failed to load total score: ${response.statusCode}');
+      return 0.0; // Return 0 jika response gagal
     }
+  } catch (e) {
+    print('Error fetching total score: $e');
+    return 0.0; // Return 0 jika terjadi kesalahan
   }
+}
 
 
   // Get current user ID from SharedPreferences

@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 // TextField NIS
                 _buildTextField(
-                  hintText: 'Nomor Induk Siswa',
+                  hintText: 'Email',
                   icon: Icons.person_outline,
                   obscureText: false,
                 ),
